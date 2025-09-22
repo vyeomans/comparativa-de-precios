@@ -8,6 +8,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
+# Nuevas librerías para las esperas inteligentes
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 def limpiar_precio(texto_precio):
     match = re.search(r'([\d\.]+)', texto_precio)
@@ -22,7 +26,13 @@ def obtener_precios_lider(driver, producto):
         url_lider = f"{base_url}/search?q={producto}"
         driver.get(url_lider)
         print(f"Buscando productos para '{producto}' en Lider.cl...")
-        time.sleep(5)
+        
+        # ESPERA INTELIGENTE: Espera hasta 15 segundos a que aparezca el primer contenedor de producto
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div[role='group']"))
+        )
+        print("Productos de Lider cargados.")
+        
         html_final = driver.page_source
         soup = BeautifulSoup(html_final, 'html.parser')
         
@@ -59,7 +69,13 @@ def obtener_precios_jumbo(driver, producto):
         url_jumbo = f"{base_url}/busqueda?ft={producto}"
         driver.get(url_jumbo)
         print(f"\nBuscando productos para '{producto}' en Jumbo.cl...")
-        time.sleep(5)
+
+        # ESPERA INTELIGENTE: Espera hasta 15 segundos a que aparezca el primer contenedor de producto
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-cnstrc-item-id]"))
+        )
+        print("Productos de Jumbo cargados.")
+        
         html_final = driver.page_source
         soup = BeautifulSoup(html_final, 'html.parser')
 
@@ -90,7 +106,6 @@ def obtener_precios_jumbo(driver, producto):
 if __name__ == "__main__":
     producto_a_buscar = "barras de proteina"
     
-    # --- Configuración de Selenium para ejecutarse en la nube (sin interfaz gráfica) ---
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
@@ -99,7 +114,6 @@ if __name__ == "__main__":
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
-    # --- El resto del script es igual ---
     resultados_lider = obtener_precios_lider(driver, producto_a_buscar)
     resultados_jumbo = obtener_precios_jumbo(driver, producto_a_buscar)
     driver.quit()
@@ -113,7 +127,6 @@ if __name__ == "__main__":
             creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
             client = gspread.authorize(creds)
             
-            # ¡Recuerda poner aquí el nombre exacto de tu hoja!
             sheet = client.open("Comparativa de Precios").sheet1
             print("✅ Conexión exitosa. Actualizando la hoja de cálculo...")
 
