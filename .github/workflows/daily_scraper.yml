@@ -1,0 +1,29 @@
+name: Daily Price Scraper
+
+on:
+  schedule:
+    # Se ejecuta todos los días a las 08:00 UTC (05:00 en Chile)
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    # Permite ejecutarlo manualmente desde la pestaña "Actions"
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create credentials file from secret
+        run: echo "${{ secrets.GOOGLE_CREDENTIALS }}" > credentials.json
+
+      - name: Run scraper script
+        run: python scraper.py
